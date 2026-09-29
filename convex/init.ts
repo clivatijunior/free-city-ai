@@ -8,6 +8,7 @@ import { Id } from './_generated/dataModel';
 import { createEngine } from './aiTown/main';
 import { ENGINE_ACTION_DURATION } from './constants';
 import { detectMismatchedLLMProvider } from './util/llm';
+import { ensurePlayerEconomy } from './economy/bootstrap';
 
 const init = mutation({
   args: {
@@ -16,6 +17,13 @@ const init = mutation({
   handler: async (ctx, args) => {
     detectMismatchedLLMProvider();
     const { worldStatus, engine } = await getOrCreateDefaultWorld(ctx);
+    const existingPlayers = await ctx.db
+      .query('playerDescriptions')
+      .withIndex('worldId', (q) => q.eq('worldId', worldStatus.worldId))
+      .take(100);
+    for (const player of existingPlayers) {
+      await ensurePlayerEconomy(ctx, worldStatus.worldId, player.playerId);
+    }
     if (worldStatus.status !== 'running') {
       console.warn(
         `Engine ${engine._id} is not active! Run "npx convex run testing:resume" to restart it.`,

@@ -1,5 +1,9 @@
 # AI Town 🏠💻💌
 
+> This branch contains the Free City economic/institutional extension. See
+> [docs/FREE_CITY_DEVELOPMENT.md](docs/FREE_CITY_DEVELOPMENT.md) for implemented modules, safe
+> initialization, telemetry, simulation scenarios, and the proposal-only Ollama planner.
+
 [Live Demo](https://www.convex.dev/ai-town)
 
 [Join our community Discord: AI Stack Devs](https://discord.gg/PQUmTBTGmT)
