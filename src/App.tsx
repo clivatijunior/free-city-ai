@@ -134,4 +134,3 @@ const modalStyles = {
     fontFamily: '"Upheaval Pro", "sans-serif"',
   },
 };
-

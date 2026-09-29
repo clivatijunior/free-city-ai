@@ -19,4 +19,3 @@ describe('calculateTotalPrice', () => {
     expect(() => calculateTotalPrice(Number.MAX_SAFE_INTEGER, 2)).toThrow();
   });
 });
-

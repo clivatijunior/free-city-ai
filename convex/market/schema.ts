@@ -27,4 +27,3 @@ export const marketTables = {
     .index('world_status', ['worldId', 'status'])
     .index('world_seller_status', ['worldId', 'sellerPlayerId', 'status']),
 };
-

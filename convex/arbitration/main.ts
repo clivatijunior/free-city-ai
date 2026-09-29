@@ -169,4 +169,3 @@ export const openForArbitrator = query({
       )
       .take(100),
 });
-

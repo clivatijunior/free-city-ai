@@ -90,4 +90,3 @@ export const proposeEconomicPlan = action({
     return { planId, plan, authority: 'proposal_only' as const };
   },
 });
-

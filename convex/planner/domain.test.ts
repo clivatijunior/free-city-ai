@@ -25,4 +25,3 @@ describe('parseEconomicPlan', () => {
     expect(() => parseEconomicPlan(raw)).toThrow();
   });
 });
-

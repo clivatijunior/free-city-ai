@@ -123,4 +123,3 @@ export const dismissPlan = mutation({
     return { dismissed: true };
   },
 });
-

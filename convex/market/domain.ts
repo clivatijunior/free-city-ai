@@ -14,4 +14,3 @@ export function calculateTotalPrice(quantity: number, unitPriceSats: number) {
   }
   return total;
 }
-

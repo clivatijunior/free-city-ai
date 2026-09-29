@@ -51,4 +51,3 @@ export const arbitrationTables = {
     .index('world_player_createdAt', ['worldId', 'playerId', 'createdAt'])
     .index('world_event', ['worldId', 'eventId']),
 };
-

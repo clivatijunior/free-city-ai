@@ -115,4 +115,3 @@ export async function transferSats(
   });
   return txId;
 }
-

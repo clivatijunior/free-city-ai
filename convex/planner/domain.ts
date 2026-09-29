@@ -76,4 +76,3 @@ export function parseEconomicPlan(raw: string) {
   });
   return { actions };
 }
-

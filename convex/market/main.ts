@@ -123,4 +123,3 @@ export const openListings = query({
       .take(limit);
   },
 });
-

@@ -96,4 +96,3 @@ proposal-only; execution requires a separate, explicit authorization design.
 - The aggregate telemetry query is intentionally bounded and returns `truncated: true` when a
   collection reaches its sample limit.
 - Seed changes affect new worlds only.
-

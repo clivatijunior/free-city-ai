@@ -23,4 +23,3 @@ export const scenarioTables = {
     .index('world_scenarioKey', ['worldId', 'scenarioKey'])
     .index('world_createdAt', ['worldId', 'createdAt']),
 };
-

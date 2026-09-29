@@ -90,4 +90,3 @@ export async function transferOwnedAsset(
   });
   return { transferId, resultingAssetId };
 }
-

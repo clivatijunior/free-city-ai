@@ -59,4 +59,3 @@ export const bootstrapWorld = mutation({
     return { initializedPlayers: descriptions.length };
   },
 });
-

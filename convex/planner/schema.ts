@@ -17,4 +17,3 @@ export const plannerTables = {
     .index('world_plan', ['worldId', 'planId'])
     .index('world_player_createdAt', ['worldId', 'playerId', 'createdAt']),
 };
-

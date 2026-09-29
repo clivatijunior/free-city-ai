@@ -371,4 +371,3 @@ export const saveWorld = internalMutation({
     await Game.saveDiff(ctx, args.worldId, args.worldDiff);
   },
 });
-

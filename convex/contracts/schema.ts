@@ -43,4 +43,3 @@ export const contractTables = {
     createdAt: v.number(),
   }).index('world_contract_signer', ['worldId', 'contractId', 'signerPlayerId']),
 };
-
