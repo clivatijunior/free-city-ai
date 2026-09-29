@@ -3,7 +3,9 @@ import { v } from 'convex/values';
 import { agentTables } from './agent/schema';
 import { aiTownTables } from './aiTown/schema';
 import { conversationId, playerId } from './aiTown/ids';
+import { economyTables } from './economy/schema';
 import { engineTables } from './engine/schema';
+import { propertyTables } from './property/schema';
 
 export default defineSchema({
   music: defineTable({
@@ -23,5 +25,7 @@ export default defineSchema({
 
   ...agentTables,
   ...aiTownTables,
+  ...economyTables,
   ...engineTables,
+  ...propertyTables,
 });
