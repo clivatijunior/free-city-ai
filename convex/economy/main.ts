@@ -2,32 +2,13 @@ import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { playerId } from '../aiTown/ids';
 import { MAX_MONEY_SUPPLY_SATS } from './constants';
-
-function assertPositiveSats(amountSats: number) {
-  if (!Number.isSafeInteger(amountSats) || amountSats <= 0) {
-    throw new ConvexError({
-      kind: 'invalidAmount',
-      message: 'Amount must be a positive safe integer number of satoshis.',
-    });
-  }
-}
-
-async function getAccount(ctx: any, worldId: any, playerIdValue: string) {
-  return await ctx.db
-    .query('economyAccounts')
-    .withIndex('world_player', (q: any) =>
-      q.eq('worldId', worldId).eq('playerId', playerIdValue),
-    )
-    .unique();
-}
-
-async function currentSupply(ctx: any, worldId: any) {
-  const accounts = await ctx.db
-    .query('economyAccounts')
-    .withIndex('world', (q: any) => q.eq('worldId', worldId))
-    .collect();
-  return accounts.reduce((sum: number, account: any) => sum + account.balanceSats, 0);
-}
+import {
+  assertPositiveSats,
+  createGenesisAccount as createGenesisAccountRecord,
+  currentSupply,
+  getAccount,
+  transferSats,
+} from './service';
 
 export const createGenesisAccount = mutation({
   args: {
@@ -38,43 +19,20 @@ export const createGenesisAccount = mutation({
   handler: async (ctx, args) => {
     assertPositiveSats(args.initialBalanceSats);
 
-    const existing = await getAccount(ctx, args.worldId, args.playerId);
-    if (existing) {
+    if (await getAccount(ctx, args.worldId, args.playerId)) {
       throw new ConvexError({
         kind: 'accountExists',
         message: 'This player already has an economy account.',
       });
     }
 
-    const supply = await currentSupply(ctx, args.worldId);
-    if (supply + args.initialBalanceSats > MAX_MONEY_SUPPLY_SATS) {
-      throw new ConvexError({
-        kind: 'supplyCapExceeded',
-        message: 'Genesis allocation would exceed the fixed monetary cap.',
-      });
-    }
-
-    const now = Date.now();
-    const accountId = await ctx.db.insert('economyAccounts', {
-      worldId: args.worldId,
-      playerId: args.playerId,
-      balanceSats: args.initialBalanceSats,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const txId = crypto.randomUUID();
-    await ctx.db.insert('economyTransactions', {
-      worldId: args.worldId,
-      txId,
-      toPlayerId: args.playerId,
-      amountSats: args.initialBalanceSats,
-      type: 'genesis',
-      memo: 'Free City genesis allocation',
-      createdAt: now,
-    });
-
-    return { accountId, txId };
+    const accountId = await createGenesisAccountRecord(
+      ctx,
+      args.worldId,
+      args.playerId,
+      args.initialBalanceSats,
+    );
+    return { accountId };
   },
 });
 
@@ -106,46 +64,14 @@ export const transfer = mutation({
       });
     }
 
-    const from = await getAccount(ctx, args.worldId, args.fromPlayerId);
-    const to = await getAccount(ctx, args.worldId, args.toPlayerId);
-
-    if (!from || !to) {
-      throw new ConvexError({
-        kind: 'accountMissing',
-        message: 'Both accounts must exist.',
-      });
-    }
-
-    if (from.balanceSats < args.amountSats) {
-      throw new ConvexError({
-        kind: 'insufficientFunds',
-        message: 'Insufficient balance.',
-      });
-    }
-
-    const now = Date.now();
-
-    await ctx.db.patch(from._id, {
-      balanceSats: from.balanceSats - args.amountSats,
-      updatedAt: now,
-    });
-    await ctx.db.patch(to._id, {
-      balanceSats: to.balanceSats + args.amountSats,
-      updatedAt: now,
-    });
-
-    const txId = crypto.randomUUID();
-    await ctx.db.insert('economyTransactions', {
+    const txId = await transferSats(ctx, {
       worldId: args.worldId,
-      txId,
       fromPlayerId: args.fromPlayerId,
       toPlayerId: args.toPlayerId,
       amountSats: args.amountSats,
       type: 'transfer',
       memo: args.memo,
-      createdAt: now,
     });
-
     return { txId };
   },
 });
@@ -178,3 +104,35 @@ export const recentTransactions = query({
       .take(Math.min(args.limit ?? 50, 200));
   },
 });
+
+export const recentForPlayer = query({
+  args: {
+    worldId: v.id('worlds'),
+    playerId,
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.max(1, Math.min(Math.floor(args.limit ?? 10), 50));
+    const sent = await ctx.db
+      .query('economyTransactions')
+      .withIndex('world_from', (q) =>
+        q.eq('worldId', args.worldId).eq('fromPlayerId', args.playerId),
+      )
+      .order('desc')
+      .take(limit);
+    const received = await ctx.db
+      .query('economyTransactions')
+      .withIndex('world_to', (q) => q.eq('worldId', args.worldId).eq('toPlayerId', args.playerId))
+      .order('desc')
+      .take(limit);
+    return [...sent, ...received]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit)
+      .map((transaction) => ({
+        ...transaction,
+        direction:
+          transaction.fromPlayerId === args.playerId ? ('sent' as const) : ('received' as const),
+      }));
+  },
+});
+

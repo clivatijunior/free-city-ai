@@ -9,6 +9,7 @@ import { useSendInput } from '../hooks/sendInput';
 import { Player } from '../../convex/aiTown/player';
 import { GameId } from '../../convex/aiTown/ids';
 import { ServerGame } from '../hooks/serverGame';
+import FreeCityEconomy from './FreeCityEconomy';
 
 export default function PlayerDetails({
   worldId,
@@ -148,6 +149,7 @@ export default function PlayerDetails({
           </h2>
         </a>
       </div>
+      <FreeCityEconomy worldId={worldId} playerId={player.id} />
       {canInvite && (
         <a
           className={
@@ -261,3 +263,4 @@ export default function PlayerDetails({
     </>
   );
 }
+

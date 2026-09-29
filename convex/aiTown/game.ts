@@ -25,6 +25,7 @@ import { internal } from '../_generated/api';
 import { HistoricalObject } from '../engine/historicalObject';
 import { AgentDescription, serializedAgentDescription } from './agentDescription';
 import { parseMap, serializeMap } from '../util/object';
+import { ensurePlayerEconomy } from '../economy/bootstrap';
 
 const gameState = v.object({
   world: v.object(serializedWorld),
@@ -313,6 +314,7 @@ export class Game extends AbstractGame {
           await ctx.db.replace(existing._id, { worldId, ...description });
         } else {
           await ctx.db.insert('playerDescriptions', { worldId, ...description });
+          await ensurePlayerEconomy(ctx, worldId, description.playerId);
         }
       }
     }
@@ -369,3 +371,4 @@ export const saveWorld = internalMutation({
     await Game.saveDiff(ctx, args.worldId, args.worldDiff);
   },
 });
+

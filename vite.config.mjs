@@ -9,3 +9,4 @@ export default defineConfig({
     allowedHosts: ['ai-town-your-app-name.fly.dev', 'localhost', '127.0.0.1'],
   },
 });
+

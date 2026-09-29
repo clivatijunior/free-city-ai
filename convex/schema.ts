@@ -6,6 +6,11 @@ import { conversationId, playerId } from './aiTown/ids';
 import { economyTables } from './economy/schema';
 import { engineTables } from './engine/schema';
 import { propertyTables } from './property/schema';
+import { marketTables } from './market/schema';
+import { contractTables } from './contracts/schema';
+import { arbitrationTables } from './arbitration/schema';
+import { plannerTables } from './planner/schema';
+import { scenarioTables } from './scenarios/schema';
 
 export default defineSchema({
   music: defineTable({
@@ -28,4 +33,10 @@ export default defineSchema({
   ...economyTables,
   ...engineTables,
   ...propertyTables,
+  ...marketTables,
+  ...contractTables,
+  ...arbitrationTables,
+  ...plannerTables,
+  ...scenarioTables,
 });
+

@@ -2,24 +2,7 @@ import { ConvexError, v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { playerId } from '../aiTown/ids';
 import { assetType } from './schema';
-
-function assertPositiveQuantity(quantity: number) {
-  if (!Number.isSafeInteger(quantity) || quantity <= 0) {
-    throw new ConvexError({
-      kind: 'invalidQuantity',
-      message: 'Quantity must be a positive safe integer.',
-    });
-  }
-}
-
-async function getAsset(ctx: any, worldId: any, assetId: string) {
-  return await ctx.db
-    .query('assets')
-    .withIndex('world_asset', (q: any) =>
-      q.eq('worldId', worldId).eq('assetId', assetId),
-    )
-    .unique();
-}
+import { assertPositiveQuantity, getAsset, transferOwnedAsset } from './service';
 
 export const getOwnedAssets = query({
   args: {
@@ -32,7 +15,7 @@ export const getOwnedAssets = query({
       .withIndex('world_owner', (q) =>
         q.eq('worldId', args.worldId).eq('ownerPlayerId', args.ownerPlayerId),
       )
-      .collect();
+      .take(200);
   },
 });
 
@@ -151,83 +134,7 @@ export const transferAsset = mutation({
       });
     }
 
-    const asset = await getAsset(ctx, args.worldId, args.assetId);
-    if (!asset) {
-      throw new ConvexError({ kind: 'assetMissing', message: 'Asset does not exist.' });
-    }
-    if (asset.ownerPlayerId !== args.fromPlayerId) {
-      throw new ConvexError({
-        kind: 'notOwner',
-        message: 'Only the owner may transfer this asset.',
-      });
-    }
-    if (args.quantity > asset.quantity) {
-      throw new ConvexError({
-        kind: 'insufficientAsset',
-        message: 'Insufficient asset quantity.',
-      });
-    }
-    if (!asset.divisible && args.quantity !== asset.quantity) {
-      throw new ConvexError({
-        kind: 'indivisibleAsset',
-        message: 'Indivisible assets must be transferred in full.',
-      });
-    }
-
-    const now = Date.now();
-    let resultingAssetId = asset.assetId;
-
-    if (args.quantity === asset.quantity) {
-      await ctx.db.patch(asset._id, {
-        ownerPlayerId: args.toPlayerId,
-        updatedAt: now,
-      });
-    } else {
-      await ctx.db.patch(asset._id, {
-        quantity: asset.quantity - args.quantity,
-        updatedAt: now,
-      });
-
-      resultingAssetId = crypto.randomUUID();
-      await ctx.db.insert('assets', {
-        worldId: args.worldId,
-        assetId: resultingAssetId,
-        type: asset.type,
-        ownerPlayerId: args.toPlayerId,
-        quantity: args.quantity,
-        divisible: asset.divisible,
-        metadata: asset.metadata,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    const transferId = crypto.randomUUID();
-
-    await ctx.db.insert('assetTransfers', {
-      worldId: args.worldId,
-      transferId,
-      sourceAssetId: asset.assetId,
-      resultingAssetId,
-      fromPlayerId: args.fromPlayerId,
-      toPlayerId: args.toPlayerId,
-      quantity: args.quantity,
-      reason: args.reason,
-      linkedTransactionId: args.linkedTransactionId,
-      createdAt: now,
-    });
-
-    await ctx.db.insert('institutionalEvents', {
-      worldId: args.worldId,
-      eventId: crypto.randomUUID(),
-      actorPlayerId: args.fromPlayerId,
-      targetPlayerId: args.toPlayerId,
-      assetId: resultingAssetId,
-      kind: 'assetTransfer',
-      createdAt: now,
-    });
-
-    return { transferId, resultingAssetId };
+    return await transferOwnedAsset(ctx, args);
   },
 });
 
@@ -259,7 +166,7 @@ export const attemptUse = mutation({
           .eq('assetId', args.assetId)
           .eq('granteePlayerId', args.actorPlayerId),
       )
-      .collect();
+      .take(100);
 
     const validGrant = grants.find(
       (grant) =>
@@ -296,3 +203,4 @@ export const attemptUse = mutation({
     };
   },
 });
+
